@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth } from "./FirebaseConfig";
+//import { auth } from "./FirebaseConfig";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
+
+
 
 const Welcome = () => {
   const navigate = useNavigate();

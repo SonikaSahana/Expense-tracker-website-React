@@ -1,10 +1,10 @@
 import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import Signup from "./Signup";
-import Login from "./Login";
-import Welcome from "./Welcome";
-import Profile from "./Profile";
+import Signup from "./SignupPage";
+import Login from "./LoginPage";
+import Welcome from "./WelcomePage";
+import Profile from "./ProfilePage";
 
 
 function App() {
