@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "./FirebaseConfig";
+import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 
 const Signup = () => {
@@ -8,10 +9,13 @@ const Signup = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false); 
+  const navigate = useNavigate(); 
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    setError("");
+    setError(""); 
+    setSuccess(false); 
 
     if (!email || !password || !confirmPassword) {
       setError("All fields are required!");
@@ -25,7 +29,20 @@ const Signup = () => {
 
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      console.log("User has successfully signed up.");
+
+      
+      setSuccess(true);
+
+      
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+
+      
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+      
     } catch (err) {
       setError(err.message);
     }
@@ -35,7 +52,12 @@ const Signup = () => {
     <div className="d-flex justify-content-center align-items-center vh-100 bg-light">
       <div className="card shadow-lg p-4 rounded-3" style={{ width: "350px" }}>
         <h2 className="text-center text-primary fw-bold">Signup</h2>
+
+       
+        {success && <p className="text-success text-center fw-bold">Signup successful! Redirecting...</p>}
+
         {error && <p className="text-danger text-center">{error}</p>}
+
         <form onSubmit={handleSignup}>
           <div className="mb-3">
             <input
@@ -51,7 +73,7 @@ const Signup = () => {
             <input
               type="password"
               className="form-control"
-              placeholder="Create a password"
+              placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -61,7 +83,7 @@ const Signup = () => {
             <input
               type="password"
               className="form-control"
-              placeholder="Confirm your password"
+              placeholder="Confirm password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
@@ -71,11 +93,17 @@ const Signup = () => {
             Sign Up
           </button>
         </form>
-        <div className="text-center mt-3">
-          <button className="btn btn-outline-secondary w-100">
-            Have an account? Login
+
+       
+        <p className="text-center mt-3">
+          Already have an account?{" "}
+          <button
+            className="btn btn-link p-0"
+            onClick={() => navigate("/login")}
+          >
+            Login
           </button>
-        </div>
+        </p>
       </div>
     </div>
   );
