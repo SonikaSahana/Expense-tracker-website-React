@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { getAuth, onAuthStateChanged, sendEmailVerification, signOut } from "firebase/auth";
-import { getDatabase, ref, push, set, onValue } from "firebase/database";
+import { getDatabase, ref, push, set, onValue, remove, update } from "firebase/database";
 import { useNavigate } from "react-router-dom";
 
 const Welcome = () => {
@@ -12,6 +12,7 @@ const Welcome = () => {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [expenses, setExpenses] = useState([]);
+  const [editingExpense, setEditingExpense] = useState(null);
 
   useEffect(() => {
     const auth = getAuth();
@@ -19,7 +20,7 @@ const Welcome = () => {
       if (user) {
         setUser(user);
         setIsVerified(user.emailVerified);
-        fetchExpenses(user.uid);  
+        fetchExpenses(user.uid);
       } else {
         navigate("/login");
       }
@@ -60,7 +61,7 @@ const Welcome = () => {
 
     try {
       const db = getDatabase();
-      const userExpenseRef = ref(db, `expenses/${user.uid}`); // Store expenses under user ID
+      const userExpenseRef = ref(db, `expenses/${user.uid}`);
       const newExpenseRef = push(userExpenseRef);
 
       await set(newExpenseRef, {
@@ -97,6 +98,55 @@ const Welcome = () => {
     });
   };
 
+  const handleDeleteExpense = async (expenseId) => {
+    try {
+      const db = getDatabase();
+      const expenseRef = ref(db, `expenses/${user.uid}/${expenseId}`);
+      await remove(expenseRef);
+      console.log("✅ Expense successfully deleted!");
+      setExpenses(expenses.filter((exp) => exp.id !== expenseId));
+    } catch (error) {
+      console.error("❌ Error deleting expense:", error);
+    }
+  };
+
+  const handleEditExpense = (expense) => {
+    setEditingExpense(expense);
+    setAmount(expense.amount);
+    setDescription(expense.description);
+    setCategory(expense.category);
+  };
+
+  const handleUpdateExpense = async (e) => {
+    e.preventDefault();
+    if (!editingExpense) return;
+
+    try {
+      const db = getDatabase();
+      const expenseRef = ref(db, `expenses/${user.uid}/${editingExpense.id}`);
+
+      await update(expenseRef, {
+        amount,
+        description,
+        category,
+      });
+
+      console.log("✅ Expense successfully updated!");
+      setExpenses(
+        expenses.map((exp) =>
+          exp.id === editingExpense.id ? { ...exp, amount, description, category } : exp
+        )
+      );
+
+      setEditingExpense(null);
+      setAmount("");
+      setDescription("");
+      setCategory("");
+    } catch (error) {
+      console.error("❌ Error updating expense:", error);
+    }
+  };
+
   return (
     <div className="container mt-4">
       <button className="btn btn-danger position-absolute top-0 end-0 m-3" onClick={handleLogout}>
@@ -125,8 +175,8 @@ const Welcome = () => {
 
       {isVerified && (
         <div className="mt-5">
-          <h2>Add Daily Expense</h2>
-          <form className="card p-4 shadow" onSubmit={handleAddExpense}>
+          <h2>{editingExpense ? "Edit Expense" : "Add Daily Expense"}</h2>
+          <form className="card p-4 shadow" onSubmit={editingExpense ? handleUpdateExpense : handleAddExpense}>
             <div className="mb-3">
               <label className="form-label">Amount Spent</label>
               <input
@@ -168,7 +218,7 @@ const Welcome = () => {
             </div>
 
             <button type="submit" className="btn btn-primary w-100">
-              Add Expense
+              {editingExpense ? "Update Expense" : "Add Expense"}
             </button>
           </form>
 
@@ -179,8 +229,16 @@ const Welcome = () => {
             ) : (
               <ul className="list-group">
                 {expenses.map((exp) => (
-                  <li key={exp.id} className="list-group-item d-flex justify-content-between">
+                  <li key={exp.id} className="list-group-item d-flex justify-content-between align-items-center">
                     <span>💰 {exp.amount} | {exp.description} | {exp.category}</span>
+                    <div>
+                      <button className="btn btn-warning btn-sm me-2" onClick={() => handleEditExpense(exp)}>
+                        Edit
+                      </button>
+                      <button className="btn btn-danger btn-sm" onClick={() => handleDeleteExpense(exp.id)}>
+                        Delete
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
