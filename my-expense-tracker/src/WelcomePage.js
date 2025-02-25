@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { getAuth, onAuthStateChanged, sendEmailVerification, signOut } from "firebase/auth";
+import { getDatabase, ref, push, set, onValue } from "firebase/database";
 import { useNavigate } from "react-router-dom";
 
 const Welcome = () => {
@@ -18,6 +19,7 @@ const Welcome = () => {
       if (user) {
         setUser(user);
         setIsVerified(user.emailVerified);
+        fetchExpenses(user.uid);  
       } else {
         navigate("/login");
       }
@@ -30,8 +32,8 @@ const Welcome = () => {
     try {
       const auth = getAuth();
       await signOut(auth);
-      localStorage.removeItem("token"); 
-      navigate("/login"); 
+      localStorage.removeItem("token");
+      navigate("/login");
     } catch (error) {
       console.error("Logout Error:", error);
     }
@@ -45,30 +47,54 @@ const Welcome = () => {
       await sendEmailVerification(user);
       setMessage("✅ Verification email sent! Check your inbox.");
     } catch (error) {
-      if (error.code === "auth/too-many-requests") {
-        setMessage("⚠️ Too many requests! Please try again later.");
-      } else {
-        setMessage("❌ Error sending verification email. Try again.");
-      }
+      setMessage("❌ Error sending verification email. Try again.");
     }
   };
 
-  const handleAddExpense = (e) => {
+  const handleAddExpense = async (e) => {
     e.preventDefault();
     if (!amount || !description || !category) {
       alert("⚠️ Please fill all fields!");
       return;
     }
-    const newExpense = {
-      id: Date.now(),
-      amount,
-      description,
-      category,
-    };
-    setExpenses([...expenses, newExpense]);
-    setAmount("");
-    setDescription("");
-    setCategory("");
+
+    try {
+      const db = getDatabase();
+      const userExpenseRef = ref(db, `expenses/${user.uid}`); // Store expenses under user ID
+      const newExpenseRef = push(userExpenseRef);
+
+      await set(newExpenseRef, {
+        amount,
+        description,
+        category,
+        createdAt: new Date().toISOString(),
+      });
+
+      setExpenses([...expenses, { id: newExpenseRef.key, amount, description, category }]);
+      setAmount("");
+      setDescription("");
+      setCategory("");
+    } catch (error) {
+      console.error("Error adding expense:", error);
+    }
+  };
+
+  const fetchExpenses = (userId) => {
+    const db = getDatabase();
+    const userExpenseRef = ref(db, `expenses/${userId}`);
+
+    onValue(userExpenseRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const expenseData = snapshot.val();
+        const expenseList = Object.keys(expenseData).map((key) => ({
+          id: key,
+          ...expenseData[key],
+        }));
+        setExpenses(expenseList);
+      } else {
+        setExpenses([]);
+      }
+    });
   };
 
   return (
