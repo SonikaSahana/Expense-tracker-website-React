@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getAuth, onAuthStateChanged, sendEmailVerification } from "firebase/auth";
+import { getAuth, onAuthStateChanged, sendEmailVerification,signOut } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 
 const Welcome = () => {
@@ -22,6 +22,17 @@ const Welcome = () => {
     return () => unsubscribe();
   }, [navigate]);
 
+  const handleLogout = async () => {
+    try {
+      const auth = getAuth();
+      await signOut(auth); // Sign out from Firebase
+      localStorage.removeItem("token"); // Clear stored token
+      navigate("/login"); // Redirect to login page
+    } catch (error) {
+      console.error("Logout Error:", error);
+    }
+  };
+
   const handleVerifyEmail = async () => {
     setMessage("");
     if (!user) return;
@@ -39,7 +50,10 @@ const Welcome = () => {
   };
 
   return (
-    <div className="d-flex flex-column align-items-center vh-100 justify-content-center">
+    <div className="d-flex flex-column align-items-center vh-100 justify-content-center">'
+       <button className="btn btn-danger position-absolute top-0 end-0 m-3" onClick={handleLogout}>
+        Logout
+      </button>
       <h1>Welcome to Expense Tracker</h1>
 
       {!isVerified ? (
