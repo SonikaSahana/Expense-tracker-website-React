@@ -21,9 +21,13 @@ const Login = () => {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const token = await userCredential.user.getIdToken(); 
-      localStorage.setItem("token", token); 
-      navigate("/welcome"); 
+      const user = userCredential.user;
+
+      
+      localStorage.setItem("token", await user.getIdToken());
+
+      
+      navigate("/welcome");
     } catch (err) {
       setError("Invalid email or password. Please try again.");
     }
