@@ -5,6 +5,7 @@ import Signup from "./SignupPage";
 import Login from "./LoginPage";
 import Welcome from "./WelcomePage";
 import Profile from "./ProfilePage";
+import ForgotPassword from "./ForgotPassword";
 
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
       <Routes>
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route
           path="/welcome"
           element={localStorage.getItem("token") ? <Welcome /> : <Navigate to="/login" />}

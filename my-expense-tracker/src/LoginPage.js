@@ -64,7 +64,12 @@ const Login = () => {
           </button>
         </form>
         <div className="text-center mt-3">
-          <button className="btn btn-link text-decoration-none" onClick={() => navigate("/forgot-password")}>Forgot Password?</button>
+          <button 
+            className="btn btn-link text-decoration-none"
+            onClick={() => navigate("/forgot-password")}
+          >
+            Forgot Password?
+          </button>
         </div>
         <div className="text-center mt-2">
           <p>Not a user? <button className="btn btn-link text-decoration-none" onClick={() => navigate("/signup")}>Sign Up</button></p>
