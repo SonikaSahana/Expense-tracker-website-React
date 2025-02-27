@@ -3,33 +3,40 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "./FirebaseConfig";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useDispatch } from "react-redux";
+import { login } from "../src/store/authSlice";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
 
     if (!email || !password) {
-      setError("All fields are required!");
+      setError("⚠️ All fields are required!");
       return;
     }
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+      const token = await user.getIdToken();
+      const userId = user.uid; 
 
       
-      localStorage.setItem("token", await user.getIdToken());
+      localStorage.setItem("token", token);
 
       
-      navigate("/welcome");
+      dispatch(login({ token, userId }));
+
+      navigate("/welcome"); 
     } catch (err) {
-      setError("Invalid email or password. Please try again.");
+      setError("❌ Invalid email or password. Please try again.");
     }
   };
 

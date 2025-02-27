@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { getAuth, onAuthStateChanged, sendEmailVerification, signOut } from "firebase/auth";
 import { getDatabase, ref, push, set, onValue, remove, update } from "firebase/database";
 import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { setExpenses, addExpense } from "../src/store/expensesSlice";
 
 const Welcome = () => {
   const navigate = useNavigate();
@@ -11,8 +13,11 @@ const Welcome = () => {
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
-  const [expenses, setExpenses] = useState([]);
   const [editingExpense, setEditingExpense] = useState(null);
+  
+  const dispatch = useDispatch();
+  const expenses = useSelector((state) => state.expenses.expenses);
+  const totalAmount = useSelector((state) => state.expenses.totalAmount); 
 
   useEffect(() => {
     const auth = getAuth();
@@ -27,12 +32,11 @@ const Welcome = () => {
     });
 
     return () => unsubscribe();
-  }, [navigate]);
+  }, [navigate, dispatch]);
 
   const handleLogout = async () => {
     try {
-      const auth = getAuth();
-      await signOut(auth);
+      await signOut(getAuth());
       localStorage.removeItem("token");
       navigate("/login");
     } catch (error) {
@@ -41,9 +45,7 @@ const Welcome = () => {
   };
 
   const handleVerifyEmail = async () => {
-    setMessage("");
     if (!user) return;
-
     try {
       await sendEmailVerification(user);
       setMessage("✅ Verification email sent! Check your inbox.");
@@ -64,14 +66,17 @@ const Welcome = () => {
       const userExpenseRef = ref(db, `expenses/${user.uid}`);
       const newExpenseRef = push(userExpenseRef);
 
-      await set(newExpenseRef, {
-        amount,
+      const newExpense = {
+        id: newExpenseRef.key,
+        amount: Number(amount),
         description,
         category,
         createdAt: new Date().toISOString(),
-      });
+      };
 
-      setExpenses([...expenses, { id: newExpenseRef.key, amount, description, category }]);
+      await set(newExpenseRef, newExpense);
+      dispatch(addExpense(newExpense));
+
       setAmount("");
       setDescription("");
       setCategory("");
@@ -91,9 +96,9 @@ const Welcome = () => {
           id: key,
           ...expenseData[key],
         }));
-        setExpenses(expenseList);
+        dispatch(setExpenses(expenseList));
       } else {
-        setExpenses([]);
+        dispatch(setExpenses([]));
       }
     });
   };
@@ -103,8 +108,7 @@ const Welcome = () => {
       const db = getDatabase();
       const expenseRef = ref(db, `expenses/${user.uid}/${expenseId}`);
       await remove(expenseRef);
-      console.log("✅ Expense successfully deleted!");
-      setExpenses(expenses.filter((exp) => exp.id !== expenseId));
+      dispatch(setExpenses(expenses.filter((exp) => exp.id !== expenseId)));
     } catch (error) {
       console.error("❌ Error deleting expense:", error);
     }
@@ -131,10 +135,11 @@ const Welcome = () => {
         category,
       });
 
-      console.log("✅ Expense successfully updated!");
-      setExpenses(
-        expenses.map((exp) =>
-          exp.id === editingExpense.id ? { ...exp, amount, description, category } : exp
+      dispatch(
+        setExpenses(
+          expenses.map((exp) =>
+            exp.id === editingExpense.id ? { ...exp, amount, description, category } : exp
+          )
         )
       );
 
@@ -145,6 +150,10 @@ const Welcome = () => {
     } catch (error) {
       console.error("❌ Error updating expense:", error);
     }
+  };
+
+  const handleActivatePremium = () => {
+    alert("🎉 Premium Activated! Enjoy extra features!");
   };
 
   return (
@@ -172,6 +181,14 @@ const Welcome = () => {
       <button className="btn btn-secondary mt-3" onClick={() => navigate("/profile")}>
         Complete Profile
       </button>
+
+      {totalAmount > 10000 && (
+        <div className="text-center mt-4">
+          <button className="btn btn-dark btn-lg" onClick={handleActivatePremium}>
+            🚀 Activate Premium
+          </button>
+        </div>
+      )}
 
       {isVerified && (
         <div className="mt-5">
@@ -221,29 +238,6 @@ const Welcome = () => {
               {editingExpense ? "Update Expense" : "Add Expense"}
             </button>
           </form>
-
-          <div className="mt-4">
-            <h3>Expense List</h3>
-            {expenses.length === 0 ? (
-              <p className="text-muted">No expenses added yet.</p>
-            ) : (
-              <ul className="list-group">
-                {expenses.map((exp) => (
-                  <li key={exp.id} className="list-group-item d-flex justify-content-between align-items-center">
-                    <span>💰 {exp.amount} | {exp.description} | {exp.category}</span>
-                    <div>
-                      <button className="btn btn-warning btn-sm me-2" onClick={() => handleEditExpense(exp)}>
-                        Edit
-                      </button>
-                      <button className="btn btn-danger btn-sm" onClick={() => handleDeleteExpense(exp.id)}>
-                        Delete
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
         </div>
       )}
     </div>
