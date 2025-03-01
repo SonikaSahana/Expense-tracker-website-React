@@ -15,10 +15,12 @@ const themeSlice = createSlice({
       state.isPremiumActivated = true; 
     },
     loadTheme: (state, action) => {
+        
         const { darkMode = false, isPremiumActivated = false } = action.payload || {};
-      state.darkMode = action.payload.darkMode;
-      state.isPremiumActivated = action.payload.isPremiumActivated; 
-    }
+        
+        state.darkMode = darkMode;
+        state.isPremiumActivated = isPremiumActivated;
+      }
   },
 });
 
